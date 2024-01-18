@@ -20,7 +20,7 @@ objp[:,:2] =20*np.mgrid[0:aristasx,0:aristasy].T.reshape(-1,2) #9 rows and 6 col
 objpoints=[]
 imgpoints=[]
 
-images=glob.glob('images/stereoLeft/*.png') #  Left Blue Images
+images=glob.glob('images/stereoLeft/*.png') #  Left Blue Camera Images
 print(len(images))
 for fname in images:
     img =cv.imread(fname)
