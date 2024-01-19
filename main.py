@@ -9,8 +9,10 @@ import numpy as np
 
 ################ VARIABLES TO CHANGE ################
 
-cameraPort=0 
-Z=50  #Distance of the Cam perpendicular to the plane 
+cameraPort=2
+Z=375  #Distance of the Cam perpendicular to the plane in mm
+minimalarea2detect=50
+side_detection_accuracy=0.04 #higher, lower precision
 
 ################ COLOR VARIABLES ################
 
@@ -39,9 +41,10 @@ upper_yellow = np.array([40,255,255])
 
 
 #Intrinsec Matrix
-K=np.array([[1.01001908e+03 ,0.00000000e+00 ,2.98920573e+02],
-            [0.00000000e+00, 1.00901034e+03, 2.29296908e+02],
+K=np.array([[1.00625224e+03 ,0.00000000e+00 ,2.98920573e+02],
+            [0.00000000e+00, 1.00700371e+03, 2.29296908e+02],
             [0.00000000e+00 ,0.00000000e+00 ,1.00000000e+00]],dtype=np.float64)
+
 fcx=K[0,0] # focal length x
 fcy=K[1,1] # focal length y
 
@@ -58,7 +61,7 @@ def main():
         # Se puede aplicar el filtro gauss tambien puede ir luego de la conversión a gray
 
         # GAUSSIAN BLUR 
-        #frame=cv.GaussianBlur(frame,(11,11),0)
+        frame=cv.GaussianBlur(frame,(11,11),0)
 
         # COLOR TRANSFORMATIONS
         hsv= cv.cvtColor(frame,cv.COLOR_BGR2HSV)
@@ -76,6 +79,8 @@ def main():
         mask=maskyellow+maskgreen+maskblue+maskred
         masked_img[np.where(mask==0)]=0
 
+        cv.imshow('masked',masked_img)
+
         # RGB IMAGES
         r_img= frame.copy()
         g_img = frame.copy()
@@ -90,9 +95,12 @@ def main():
         # DETECTING THE CONTOURS
         canny=cv.Canny(masked_img,100,200)
 
+        cv.imshow('canny',canny)
+
         # ERODE AND DILATE THE EDGES
         canny = cv.dilate(canny, None, iterations=1)
         canny = cv.erode(canny, None, iterations=1)
+        cv.imshow('ero-canny',canny)
         contours,_ = cv.findContours(canny,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE)
 
         # DETECTION OF COLORS AND SHAPES
@@ -102,7 +110,7 @@ def main():
                 detected = False
                 # REMOVAL OF SMALL OBJECTS BY AREA
                 area=cv.contourArea(c)
-                if area > 400:
+                if area > minimalarea2detect:
                     # OBTAINING MOMENTS
                     M=cv.moments(c)
                     if M['m00'] != 0:
@@ -114,13 +122,16 @@ def main():
                         Y=Z*y/fcy
                         X=round(X,2)
                         Y=round(Y,2)
-                        # cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
-                        # cv.putText(frame,'Y:' + str(Y), (x,y+25),1,1.5,font_color,1)
                         
                         # SHAPE DETECTION
-                        approx = cv.approxPolyDP(c,0.01*cv.arcLength(c,True),True)
+                        approx = cv.approxPolyDP(c,side_detection_accuracy*cv.arcLength(c,True),True)
+                        
+                        # DRAWN NUMBER OF SIDES
+                        # cv.putText(canny,str(len(approx)), (x,y+10),1,1.5,(255,255,255),1)
+                        # cv.imshow('circle',canny)
+                        
                         if len(approx)==3:
-                            cv.drawContours(frame,[c],0,(0,255,0),1) #Triangulo
+                            cv.drawContours(frame,[c],0,(0,255,0),2) #Triangulo
                             cv.putText(frame,'Triangulo', (x,y-8),1,1.5,font_color,1)
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
@@ -131,8 +142,14 @@ def main():
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
                             detected=True
+                        elif len(approx)==5:
+                            cv.drawContours(frame,[c],0,(0,0,255),2) #Pentagono
+                            cv.putText(frame,'Pentagono', (x,y-8),1,1.5,font_color,1)
+                            cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
+                            cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
+                            detected=True
                         elif len(approx) > 7 and len(approx) < 10 :
-                            cv.drawContours(frame,[c],0,(255,0,0),3) # Circulo
+                            cv.drawContours(frame,[c],0,(255,0,0),2) # Circulo
                             cv.putText(frame,'Circulo', (x,y-8),1,1.5,font_color,1)
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
