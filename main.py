@@ -10,7 +10,7 @@ import numpy as np
 ################ VARIABLES TO CHANGE ################
 
 cameraPort=2
-Z=375  #Distance of the Cam perpendicular to the plane in mm
+Z=365  #Distance of the Cam perpendicular to the plane in mm
 minimalarea2detect=50
 side_detection_accuracy=0.04 #higher, lower precision
 
@@ -129,6 +129,7 @@ def main():
                         # DRAWN NUMBER OF SIDES
                         # cv.putText(canny,str(len(approx)), (x,y+10),1,1.5,(255,255,255),1)
                         # cv.imshow('circle',canny)
+                        _,__,w,h=cv.boundingRect(approx)
                         
                         if len(approx)==3:
                             cv.drawContours(frame,[c],0,(0,255,0),2) #Triangulo
@@ -138,23 +139,28 @@ def main():
                             detected=True
                         elif len(approx)==4:
                             cv.drawContours(frame,[c],0,(0,0,255),2) #Cuadrado
-                            cv.putText(frame,'Cuadrado', (x,y-8),1,1.5,font_color,1)
+                            aspect_ratio = float(w)/h
+                            if aspect_ratio < 1.05 and aspect_ratio > 0.97 :
+                                cv.putText(frame,'Cuadrado', (x,y-8),1,1.5,font_color,1)
+                            else:
+                                cv.putText(frame,'Rectangulo', (x,y-8),1,1.5,font_color,1)
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
                             detected=True
+                            
                         elif len(approx)==5:
                             cv.drawContours(frame,[c],0,(0,0,255),2) #Pentagono
                             cv.putText(frame,'Pentagono', (x,y-8),1,1.5,font_color,1)
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
                             detected=True
-                        elif len(approx) > 7 and len(approx) < 10 :
+                        elif len(approx) > 5 and len(approx) < 9 :
                             cv.drawContours(frame,[c],0,(255,0,0),2) # Circulo
                             cv.putText(frame,'Circulo', (x,y-8),1,1.5,font_color,1)
                             cv.putText(frame,'X:' + str(X), (x,y+10),1,1.5,font_color,1)
                             cv.putText(frame,'Y:' + str(Y), (x,y+28),1,1.5,font_color,1)
                             detected=True
-                            break
+                        
                         
                         # COLOR DETECTION
                         if np.all(r_img[y][x][:] != (0,0,0)) and detected==True:
